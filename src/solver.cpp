@@ -1201,6 +1201,17 @@ bool Solver::frozen (int lit) const {
 
 /*------------------------------------------------------------------------*/
 
+bool Solver::trace_eventlog (const char *path) {
+  TRACE ("trace_eventlog", path);
+  REQUIRE_VALID_STATE ();
+  REQUIRE (state () == CONFIGURING,
+           "can only set eventlog path '%s' right after initialization", path);
+  internal->eventlog_path = path;
+  internal->opts.eventlog = 1;
+  LOG_API_CALL_RETURNS ("trace_eventlog", path, true);
+  return true;
+}
+
 bool Solver::trace_proof (FILE *external_file, const char *name) {
   TRACE ("trace_proof", name);
   REQUIRE_VALID_STATE ();

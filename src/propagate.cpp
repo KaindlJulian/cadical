@@ -106,6 +106,8 @@ inline void Internal::search_assign (int lit, Clause *reason) {
 
   const int idx = vidx (lit);
   const bool from_external = reason == external_reason;
+  const bool is_decision = (reason == decision_reason);
+  const Clause *hook_reason_save = (is_decision || from_external) ? nullptr : reason;
   assert (!val (idx));
   assert (!flags (idx).eliminated () || reason == decision_reason ||
           reason == external_reason);
@@ -156,6 +158,9 @@ inline void Internal::search_assign (int lit, Clause *reason) {
   else
     LOG (reason, "search assign %d @ %d", lit, lit_level);
 #endif
+
+  if (!is_decision && !from_external)
+    hook_propagate (lit, lit_level, const_cast<Clause *> (hook_reason_save));
 
   if (watching ()) {
     const Watches &ws = watches (-lit);

@@ -1020,6 +1020,7 @@ void Internal::analyze () {
   // Actual conflict on root level, thus formula unsatisfiable.
   //
   if (!level) {
+    hook_conflict ();
     learn_empty_clause ();
     if (external->learner)
       external->export_learned_empty_clause ();
@@ -1043,6 +1044,7 @@ void Internal::analyze () {
   // articulation points is not necessary.
   //
   Clause *reason = conflict;
+  hook_conflict ();
   LOG (reason, "analyzing conflict");
 
   assert (clause.empty ());
@@ -1254,6 +1256,7 @@ void Internal::analyze () {
 
   int new_level = determine_actual_backtrack_level (jump);
   UPDATE_AVERAGE (averages.current.level, new_level);
+  hook_learn_and_backtrack (glue, jump, new_level, driving_clause);
   backtrack (new_level);
 
   // It should hold that (!level <=> size == 1)

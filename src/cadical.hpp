@@ -860,6 +860,14 @@ public:
   bool trace_proof (FILE *file, const char *name); // Write proof.
   bool trace_proof (const char *path);             // Open & write proof.
 
+  // Direct JSON event log to a dedicated file instead of stdout.
+  // Must be called before solve(); sets --eventlog automatically.
+  //
+  //   require (CONFIGURING)
+  //   ensure (CONFIGURING)
+  //
+  bool trace_eventlog (const char *path);
+
   // Flushing the proof trace file eventually calls 'fflush' on the actual
   // file or pipe and thus if this function returns all the proof steps
   // should have been written (with the same guarantees as 'fflush').

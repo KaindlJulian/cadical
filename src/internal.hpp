@@ -299,7 +299,8 @@ struct Internal {
       file_tracers; // file proof tracers (ie DRAT, LRAT...)
   vector<StatTracer *> stat_tracers; // checkers
 
-  Options opts; // run-time options
+  const char *eventlog_path; // null = stdout, set by Solver::trace_eventlog
+  Options opts;             // run-time options
   Stats stats;  // statistics
 #ifndef QUIET
   Profiles profiles;         // time profiles for various functions
@@ -1786,6 +1787,18 @@ struct Internal {
   void phase (const char *phase, int64_t count, const char *, ...)
       CADICAL_ATTRIBUTE_FORMAT (4, 5);
 #endif
+
+  // Structured JSON event logging (enabled with --eventlog or trace_eventlog).
+  //
+  void hook_init ();
+  void hook_decide (int lit, bool random_dec);
+  void hook_propagate (int lit, int lit_level, Clause *reason);
+  void hook_conflict ();
+  void hook_learn_and_backtrack (int glue, int jump, int new_level,
+                                 Clause *driving);
+  void hook_restart (int to_level);
+  void hook_delete_clause (Clause *c);
+  void hook_result (int res);
 
   // Print error messages which are really always printed (even if 'quiet'
   // is set).  This leads to exit the current process with exit status '1'.

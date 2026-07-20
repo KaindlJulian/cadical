@@ -25,7 +25,7 @@ Internal::Internal ()
       target_assigned (0), no_conflict_until (0), unsat_constraint (false),
       marked_failed (true), sweep_incomplete (false),
       randomized_deciding (false), citten (0), num_assigned (0), proof (0),
-      opts (this),
+      eventlog_path (0), opts (this),
 #ifndef QUIET
       profiles (this), force_phase_messages (false),
 #endif
@@ -286,6 +286,8 @@ int Internal::cdcl_loop_with_inprocessing () {
     START (unstable);
     report ('{');
   }
+
+  hook_init ();
 
   while (!res) {
     if (unsat)
@@ -1002,6 +1004,7 @@ int Internal::solve (bool preprocess_only) {
       res = cdcl_loop_with_inprocessing ();
     }
   }
+  hook_result (res);
   finalize (res);
   reset_solving ();
   report_solving (res);

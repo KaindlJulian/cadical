@@ -254,6 +254,7 @@ void Internal::deallocate_clause (Clause *c) {
 
 void Internal::delete_clause (Clause *c) {
   LOG (c, "delete pointer %p", (void *) c);
+  hook_delete_clause (c);
   size_t bytes = c->bytes ();
   stats.collected += bytes;
   if (c->garbage) {

@@ -151,6 +151,7 @@ void App::print_usage (bool all) {
 "\n"
 "  -o <output>    write simplified CNF in DIMACS format to file\n"
 "  -e <extend>    write reconstruction/extension stack to file\n"
+"  -j <events>    write solver event log (NDJSON) to file\n"
 #ifdef LOGGING
 "  -l             enable logging messages (same as '--log')\n"
 #endif
@@ -379,7 +380,7 @@ int App::main (int argc, char **argv) {
 
   const char *preprocessing_specified = 0, *optimization_specified = 0;
   const char *read_solution_path = 0, *write_result_path = 0;
-  const char *dimacs_path = 0, *proof_path = 0;
+  const char *dimacs_path = 0, *proof_path = 0, *eventlog_path = 0;
   bool proof_specified = false, dimacs_specified = false;
   int optimize = 0, preprocessing = 0, localsearch = 0;
   const char *output_path = 0, *extension_path = 0;
@@ -405,6 +406,16 @@ int App::main (int argc, char **argv) {
         dimacs_specified = true;
       else
         proof_specified = true;
+    } else if (!strcmp (argv[i], "-j")) {
+      if (++i == argc)
+        APPERR ("argument to '-j' missing");
+      else if (eventlog_path)
+        APPERR ("multiple eventlog options '-j %s' and '-j %s'",
+                eventlog_path, argv[i]);
+      else if (!File::writable (argv[i]))
+        APPERR ("eventlog file '%s' not writable", argv[i]);
+      else
+        eventlog_path = argv[i];
     } else if (!strcmp (argv[i], "-r")) {
       if (++i == argc)
         APPERR ("argument to '-r' missing");
@@ -697,6 +708,13 @@ int App::main (int argc, char **argv) {
                        tout.green_code (), proof_path, tout.normal_code ());
   } else
     solver->verbose (1, "will not generate nor write DRAT proof");
+  if (eventlog_path) {
+    solver->section ("json logging");
+    if (!solver->trace_eventlog (eventlog_path))
+      APPERR ("can not open eventlog file '%s'", eventlog_path);
+    solver->message ("writing hook events to %s'%s'%s",
+                     tout.green_code (), eventlog_path, tout.normal_code ());
+  }
   solver->section ("parsing input");
   dimacs_name = dimacs_path ? dimacs_path : "<stdin>";
   string help;

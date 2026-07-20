@@ -332,11 +332,17 @@ int Internal::decide () {
     } else {
       stats.decisions++;
       if (!decision) {
+        const int64_t random_before = stats.randec.random_decisions;
         int idx = next_decision_variable ();
+        const bool random_dec = (stats.randec.random_decisions > random_before);
         const bool target = (opts.target > 1 || (stable && opts.target));
         decision = decide_phase (idx, target);
+        search_assume_decision (decision);
+        hook_decide (decision, random_dec);
+      } else {
+        search_assume_decision (decision);
+        hook_decide (decision, false);
       }
-      search_assume_decision (decision);
     }
   }
   if (res)
