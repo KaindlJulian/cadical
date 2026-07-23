@@ -362,6 +362,7 @@ void Internal::assign_original_unit (int64_t id, int lit) {
   LOG ("original unit assign %d", lit);
   assert (num_assigned == trail.size () || level);
   mark_fixed (lit);
+  hook_propagate (lit, 0, nullptr); // root fact; consequences follow below
   if (level)
     return;
   if (propagate ())

@@ -287,8 +287,6 @@ int Internal::cdcl_loop_with_inprocessing () {
     report ('{');
   }
 
-  hook_init ();
-
   while (!res) {
     if (unsat)
       res = 20;
@@ -955,6 +953,8 @@ int Internal::solve (bool preprocess_only) {
   assert (clause.empty ());
   stats.searches++;
   START (solve);
+  hook_init (); // emit initial snapshot once, before any solving path
+
   if (proof)
     proof->solve_query ();
   if (opts.ilb) {

@@ -21,8 +21,10 @@ public:
 
   virtual ~SolverObserver() = default;
 
-  // Fired once before the CDCL loop begins.
+  // Fired once before solving begins.
   // Captures the complete initial formula the solver will operate on.
+  // Root-level literals forced during parsing are reported afterwards as
+  // ordinary on_propagate events.
   virtual void on_init(int variables, int clauses,
     const std::vector<int>& variable_ids,
     const std::vector<ClauseInfo>& clause_list) = 0;
