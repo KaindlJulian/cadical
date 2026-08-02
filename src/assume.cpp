@@ -8,9 +8,9 @@ namespace CaDiCaL {
 
 void Internal::assume (int lit) {
   if (level && !opts.ilb)
-    backtrack ();
+    backtrack (0, "assume");
   else if (val (lit) < 0)
-    backtrack (max (0, var (lit).level - 1));
+    backtrack (max (0, var (lit).level - 1), "assume");
   Flags &f = flags (lit);
   const unsigned char bit = bign (lit);
   if (f.assumed & bit) {
@@ -552,7 +552,7 @@ void Internal::sort_and_reuse_assumptions () {
   if (assumptions.empty ()) {
     if (opts.ilb == 1) {
       LOG ("no assumptions, reusing nothing (ilb == 1)");
-      backtrack (0);
+      backtrack (0, "assume");
     } else { // reuse full trail
       LOG ("no assumptions, reusing everything (ilb == 2)");
       return;
@@ -606,7 +606,7 @@ void Internal::sort_and_reuse_assumptions () {
       (size_t) target > assumptions.size ()) // reusing only assumptions
     target = assumptions.size ();
   if (target < level)
-    backtrack_without_updating_phases (target);
+    backtrack_without_updating_phases (target, "assume");
   LOG ("assumptions allow for reuse of trail up to level %d", level);
   if ((size_t) level > assumptions.size ())
     stats.assumptionsreused += assumptions.size ();

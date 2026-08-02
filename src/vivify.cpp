@@ -474,7 +474,7 @@ void Internal::vivify_strengthen (Clause *c, int64_t &ticks) {
 
   if (clause.size () == 1) {
 
-    backtrack_without_updating_phases ();
+    backtrack_without_updating_phases (0, "vivify");
     const int unit = clause[0];
     LOG (c, "vivification shrunken to unit %d", unit);
     assert (!val (unit));
@@ -512,7 +512,7 @@ void Internal::vivify_strengthen (Clause *c, int64_t &ticks) {
 
     assert (new_level >= 0);
     if (new_level < level)
-      backtrack (new_level);
+      backtrack (new_level, "vivify");
 
     assert (val (lit0) >= 0);
     assert (val (lit1) >= 0 || (val (lit0) > 0 && val (lit1) < 0 &&
@@ -555,7 +555,7 @@ void Internal::vivify_sort_watched (Clause *c) {
 
   assert (new_level >= 0);
   if (new_level < level)
-    backtrack_without_updating_phases (new_level);
+    backtrack_without_updating_phases (new_level, "vivify");
 
   assert (val (lit0) >= 0);
   assert (val (lit1) >= 0 || (val (lit0) > 0 && val (lit1) < 0 &&
@@ -835,7 +835,7 @@ bool Internal::vivify_instantiate (
   assert (!var (lit).reason);
   assert (var (lit).level);
   assert (val (lit));
-  backtrack_without_updating_phases (level - 1);
+  backtrack_without_updating_phases (level - 1, "vivify");
   assert (val (lit) == 0);
   stats.vivifydecs++;
   vivify_assume (lit);
@@ -854,7 +854,7 @@ bool Internal::vivify_instantiate (
     int remove = lit;
     conflict = nullptr;
     unwatch_clause (c);
-    backtrack_without_updating_phases (level - 2);
+    backtrack_without_updating_phases (level - 2, "vivify");
     strengthen_clause (c, remove);
     vivify_sort_watched (c);
     watch_clause (c);
@@ -961,7 +961,7 @@ bool Internal::vivify_clause (Vivifier &vivifier, Clause *c) {
     if (forced) {
       LOG ("clause is reason forcing %d", forced);
       assert (var (forced).level);
-      backtrack_without_updating_phases (var (forced).level - 1);
+      backtrack_without_updating_phases (var (forced).level - 1, "vivify");
     }
 
     // As long the (remaining) literals of the sorted clause match
@@ -982,7 +982,7 @@ bool Internal::vivify_clause (Vivifier &vivifier, Clause *c) {
         } else {
           LOG ("literal %d does not match decision %d at decision level %d",
                lit, decision, l);
-          backtrack_without_updating_phases (l - 1);
+          backtrack_without_updating_phases (l - 1, "vivify");
           break;
         }
       }
@@ -1155,7 +1155,7 @@ bool Internal::vivify_clause (Vivifier &vivifier, Clause *c) {
 
   if (conflict && level == level_after_assumptions) {
     LOG ("forcing backtracking at least one level after conflict");
-    backtrack_without_updating_phases (level - 1);
+    backtrack_without_updating_phases (level - 1, "vivify");
   }
 
   clause.clear ();
@@ -1609,7 +1609,7 @@ void Internal::vivify_round (Vivifier &vivifier, int64_t ticks_limit) {
   }
 
   if (level)
-    backtrack_without_updating_phases ();
+    backtrack_without_updating_phases (0, "vivify");
 
   if (!unsat) {
     int64_t still_need_to_be_vivified = schedule.size ();
@@ -1737,7 +1737,7 @@ bool Internal::vivify () {
   if (!stats.current.irredundant)
     return false;
   if (level)
-    backtrack ();
+    backtrack (0, "vivify");
   assert (opts.vivify);
   assert (!level);
 

@@ -7,10 +7,12 @@
 // Abstract observer interface for solver events.
 //
 // Adapters implement this class (mapping solver-internal
-// structures to the plain c++ types below). 
-// 
-// Consumers implement it once per output format (e.g. NdjsonObserver writes 
+// structures to the plain c++ types below).
+//
+// Consumers implement it once per output format (e.g. NdjsonObserver writes
 // NDJSON to stdout).
+
+static const int NDJSON_PROTOCOL_VERSION = 2;
 
 class SolverObserver {
 public:
@@ -18,6 +20,20 @@ public:
     int64_t id;
     std::vector<int> literals;
   };
+
+  enum class BacktrackKind {
+    Conflict, // unwind that resolves a conflict: backjump, chronological unwind before analysis, or otf subsumption
+    Restart,  // the unwind belonging to a restart
+    Other     // inprocessing, preprocessing, incremental API, cleanup
+  };
+
+  static const char *to_string(BacktrackKind kind) {
+    switch (kind) {
+    case BacktrackKind::Conflict: return "conflict";
+    case BacktrackKind::Restart: return "restart";
+    default: return "other";
+    }
+  }
 
   virtual ~SolverObserver() = default;
 
@@ -43,18 +59,22 @@ public:
     const std::vector<int>& literals, int level,
     const std::vector<int>& trail) = 0;
 
-  // Fired after the 1st-UIP clause is derived, before backtracking.
+  // Fired after the 1st-UIP clause is derived. Reports the clause only.
   // jump_level is the raw second-highest decision level in the learned clause.
-  // backtrack_level is the actual backtrack target (may differ under
-  // chronological backtracking).
-  virtual void on_learn_and_backtrack(
-    const std::vector<int>& learned_literals, int glue, int64_t clause_id,
-    int jump_level, int backtrack_level) = 0;
+  virtual void on_learn(const std::vector<int>& learned_literals, int glue,
+    int64_t clause_id, int jump_level) = 0;
 
-  // Fired before a restart backtrack.
-  // from_level is the current decision level; to_level is the restart target
-  // (may be > 0 under trail reuse).
-  virtual void on_restart(int64_t count, int from_level, int to_level) = 0;
+  // Fired before every trail unwind, from any site in the solver, and only
+  // when something is actually unwound (to_level < from_level).
+  //
+  // reason is optional free-form detail naming the phase that requested the unwind.
+  virtual void on_backtrack(int from_level, int to_level, BacktrackKind kind,
+    const char* reason) = 0;
+
+  // Fired before a restart. A marker only, the restart's own unwind arrives
+  // as an on_backtrack with kind Restart (which may be absent when trail
+  // reuse leaves the level unchanged).
+  virtual void on_restart(int64_t count) = 0;
 
   // Fired before a clause is freed during garbage collection.
   virtual void on_delete_clause(int64_t clause_id,

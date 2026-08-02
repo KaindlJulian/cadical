@@ -514,7 +514,7 @@ void Internal::remove_garbage_binaries () {
   delete_garbage_clauses ();
   unprotect_reasons ();
   if (backtrack_level - 1 < level)
-    backtrack (backtrack_level - 1);
+    backtrack (backtrack_level - 1, "collect");
   STOP (collect);
 }
 

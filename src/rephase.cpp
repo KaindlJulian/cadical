@@ -126,7 +126,7 @@ void Internal::rephase () {
   //
   report ('~', 1);
 
-  backtrack ();
+  backtrack (0, "rephase");
 
   size_t count = lim.rephased[stable]++;
   bool single;

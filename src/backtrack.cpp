@@ -76,20 +76,25 @@ void Internal::update_target_and_best () {
 
 /*------------------------------------------------------------------------*/
 
-void Internal::backtrack (int new_level) {
+void Internal::backtrack (int new_level, const char* reason) {
   assert (new_level <= level);
   if (new_level == level)
     return;
 
   update_target_and_best ();
-  backtrack_without_updating_phases (new_level);
+  backtrack_without_updating_phases (new_level, reason);
 }
 
-void Internal::backtrack_without_updating_phases (int new_level) {
+void Internal::backtrack_without_updating_phases (int new_level, const char* reason) {
 
   assert (new_level <= level);
   if (new_level == level)
     return;
+
+  // Every trail unwind in the solver goes through here
+  // so this is the one place the event log has to observe. Fired
+  // before the unwind, 'level' still holds the pre-unwind level.
+  hook_backtrack (new_level, reason);
 
   stats.backtracks++;
 

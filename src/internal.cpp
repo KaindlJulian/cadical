@@ -835,7 +835,7 @@ int Internal::try_to_satisfy_formula_by_saved_phases () {
     } else if (!propagate ()) {
       LOG ("saved phases do not satisfy redundant clauses");
       assert (level > 0);
-      backtrack ();
+      backtrack (0, "solve");
       conflict = 0; // ignore conflict
       assert (!res);
       break;
@@ -977,7 +977,7 @@ int Internal::solve (bool preprocess_only) {
   init_report_limits ();
   int res = already_solved ();
   if (!res && preprocess_only && level)
-    backtrack ();
+    backtrack (0, "solve");
   if (!res)
     res = restore_clauses ();
   if (!res || (res == 10 && external_prop)) {
@@ -1000,7 +1000,7 @@ int Internal::solve (bool preprocess_only) {
       decay_clauses_upon_incremental_clauses ();
     if (!res || (res == 10 && external_prop)) {
       if (res == 10 && external_prop && level)
-        backtrack ();
+        backtrack (0, "solve");
       res = cdcl_loop_with_inprocessing ();
     }
   }
@@ -1019,7 +1019,7 @@ int Internal::already_solved () {
     res = 20;
   } else {
     if (level && !opts.ilb)
-      backtrack ();
+      backtrack (0, "solve");
     if (!level && !propagate ()) {
       LOG ("root level propagation produces conflict");
       learn_empty_clause ();
@@ -1084,7 +1084,7 @@ int Internal::lookahead () {
     if (level) {
       // Combining lookahead with external propagator is limited
       // Note that lookahead_probing (); would also force backtrack anyway
-      backtrack ();
+      backtrack (0, "lookahead");
     }
     LOG ("external notifications are turned off during preprocessing.");
     private_steps = true;

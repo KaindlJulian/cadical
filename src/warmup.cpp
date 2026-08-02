@@ -393,7 +393,7 @@ int Internal::warmup () {
   // notify.
   private_steps = no_backtrack_notification;
   if (!res)
-    backtrack_without_updating_phases ();
+    backtrack_without_updating_phases (0, "warmup");
   private_steps = false;
   STOP (warmup);
   require_mode (WALK);

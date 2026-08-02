@@ -552,7 +552,7 @@ void Internal::failed_literal (int failed) {
     work.push_back (parent);
   }
 
-  backtrack ();
+  backtrack (0, "probe");
   conflict = 0;
 
   assert (!val (uip));
@@ -834,7 +834,7 @@ bool Internal::probe () {
     LOG ("probing %d", probe);
     probe_assign_decision (probe);
     if (probe_propagate ())
-      backtrack_without_updating_phases ();
+      backtrack_without_updating_phases (0, "probe");
     else
       failed_literal (probe);
     clean_probehbr_lrat ();
@@ -916,7 +916,7 @@ void CaDiCaL::Internal::inprobe (bool update_limits) {
   if (unsat)
     return;
   if (level)
-    backtrack ();
+    backtrack (0, "probe");
   if (!propagate ()) {
     learn_empty_clause ();
     return;

@@ -440,7 +440,7 @@ void Internal::elimfast () {
   if (unsat)
     return;
   if (level)
-    backtrack ();
+    backtrack (0, "elim");
   if (!propagate ()) {
     learn_empty_clause ();
     return;

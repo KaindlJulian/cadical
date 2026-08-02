@@ -7,7 +7,7 @@ void Internal::constrain (int lit) {
     constraint.push_back (lit);
   else {
     if (level)
-      backtrack ();
+      backtrack (0, "constrain");
     LOG (constraint, "shrinking constraint");
     bool satisfied_constraint = false;
     const vector<int>::const_iterator end = constraint.end ();

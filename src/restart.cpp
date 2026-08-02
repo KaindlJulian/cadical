@@ -167,8 +167,8 @@ void Internal::restart () {
     stats.restartstable++;
   LOG ("restart %" PRId64 "", stats.restarts);
   int restart_to = reuse_trail ();
-  hook_restart (restart_to);
-  backtrack (restart_to);
+  hook_restart ();
+  backtrack (restart_to, "restart");
 
   lim.restart = stats.conflicts + opts.restartint;
   LOG ("new restart limit at %" PRId64 " conflicts", lim.restart);

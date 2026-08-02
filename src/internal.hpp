@@ -762,8 +762,14 @@ struct Internal {
   //
   void unassign (int lit);
   void update_target_and_best ();
-  void backtrack (int target_level = 0);
-  void backtrack_without_updating_phases (int target_level = 0);
+  // 'reason' is only consumed by the event log ('hook_backtrack'): it names
+  // the phase that requested the unwind, since the chokepoint below cannot
+  // tell.  Passing it explicitly rather than stashing it on 'Internal' keeps
+  // it correct for the no-op case ('new_level == level'), which returns
+  // without unwinding and must not leak a label into the next backtrack.
+  void backtrack (int target_level = 0, const char *reason = "other");
+  void backtrack_without_updating_phases (int target_level = 0,
+                                          const char *reason = "other");
 
   // Minimized learned clauses in 'minimize.cpp'.
   //
@@ -1794,9 +1800,9 @@ struct Internal {
   void hook_decide (int lit, bool random_dec);
   void hook_propagate (int lit, int lit_level, Clause *reason);
   void hook_conflict ();
-  void hook_learn_and_backtrack (int glue, int jump, int new_level,
-                                 Clause *driving);
-  void hook_restart (int to_level);
+  void hook_learn (int glue, int jump, Clause *driving);
+  void hook_backtrack (int new_level, const char *reason);
+  void hook_restart ();
   void hook_delete_clause (Clause *c);
   void hook_result (int res);
 

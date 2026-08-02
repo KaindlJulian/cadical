@@ -184,7 +184,7 @@ bool Internal::propagate_out_of_order_units () {
   if (!oou)
     return true;
   assert (opts.chrono || external_prop || did_external_prop);
-  backtrack (0);
+  backtrack (0, "reduce");
   if (propagate ())
     return true;
   learn_empty_clause ();

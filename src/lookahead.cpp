@@ -303,7 +303,7 @@ int Internal::lookahead_probing () {
   if (unsat)
     return INT_MIN;
   if (level)
-    backtrack ();
+    backtrack (0, "lookahead");
   if (!propagate ()) {
     MSG ("empty clause before probing");
     learn_empty_clause ();
@@ -354,7 +354,7 @@ int Internal::lookahead_probing () {
 
     probe_assign_decision (probe);
     if (probe_propagate ())
-      hbrs = trail.size (), backtrack ();
+      hbrs = trail.size (), backtrack (0, "lookahead");
     else
       hbrs = 0, failed_literal (probe);
     clean_probehbr_lrat ();

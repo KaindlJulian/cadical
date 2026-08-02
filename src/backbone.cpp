@@ -399,7 +399,7 @@ unsigned Internal::compute_backbone_round (std::vector<int> &candidates,
     ++failed;
     ++stats.backbone.units;
     int uip = backbone_analyze (conflict, ticks);
-    backtrack_without_updating_phases (level - 1);
+    backtrack_without_updating_phases (level - 1, "backbone");
     backbone_unit_assign (uip);
     ++stats.units;
     assert (!conflict);
@@ -452,7 +452,7 @@ unsigned Internal::compute_backbone_round (std::vector<int> &candidates,
   }
   LOG (candidates, "candidates after !inconsistent: ");
   if (level)
-    backtrack_without_updating_phases ();
+    backtrack_without_updating_phases (0, "backbone");
   if (!inconsistent && !units.empty ()) {
     for (auto l : units) {
       backbone_unit_reassign (l);
@@ -572,7 +572,7 @@ unsigned Internal::compute_backbone () {
   if (inconsistent && !unsat) {
     LOG ("using forced unit %s by repropagating at level 0",
          LOGLIT (inconsistent));
-    backtrack_without_updating_phases ();
+    backtrack_without_updating_phases (0, "backbone");
     propagate ();
     learn_empty_clause ();
   }
@@ -587,7 +587,7 @@ unsigned Internal::compute_backbone () {
 
   keep_backbone_candidates (candidates);
   if (level) {
-    backtrack_without_updating_phases ();
+    backtrack_without_updating_phases (0, "backbone");
     if (!backbone_propagate (ticks)) {
       learn_empty_clause ();
     }
@@ -602,7 +602,7 @@ void Internal::binary_clauses_backbone () {
   if (!opts.backbone)
     return;
   if (level)
-    backtrack_without_updating_phases ();
+    backtrack_without_updating_phases (0, "backbone");
   propagated2 = 0; // TODO: why?
   if (!propagate ()) {
     LOG ("propagation after connecting watches in inconsistency");

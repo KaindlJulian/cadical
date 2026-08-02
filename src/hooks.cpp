@@ -3,6 +3,7 @@
 #include "NdjsonObserver.hpp"
 #include "NdjsonFileObserver.hpp"
 
+#include <cstring>
 #include <memory>
 
 namespace CaDiCaL {
@@ -104,20 +105,50 @@ namespace CaDiCaL {
     observer().on_conflict(conflict->id, lits, level, trail);
   }
 
-  void Internal::hook_learn_and_backtrack(int glue, int jump, int new_level,
-    Clause* driving) {
+  void Internal::hook_learn(int glue, int jump, Clause* driving) {
     if (!opts.eventlog || !g_observer || searching_lucky_phases)
       return;
 
     int64_t cid = driving ? driving->id : -1;
-    observer().on_learn_and_backtrack(clause, glue, cid, jump, new_level);
+    observer().on_learn(clause, glue, cid, jump);
   }
 
-  void Internal::hook_restart(int to_level) {
+  // Maps phase label to the protocols kind field.
+  //
+  // Only the three conflict-resolution paths in analyze.cpp are Conflict:
+  // the backjump after a learned clause ("analyze"), the chronological unwind
+  // taken before analysis begins ("chrono"), and on-the-fly subsumption
+  // resolving the conflict without deriving a clause ("otfs"). Apart form retarts 
+  // everything else is other.
+  static SolverObserver::BacktrackKind backtrack_kind(const char* reason) {
+    if (!reason)
+      return SolverObserver::BacktrackKind::Other;
+    if (!strcmp(reason, "analyze") || !strcmp(reason, "chrono") ||
+        !strcmp(reason, "otfs"))
+      return SolverObserver::BacktrackKind::Conflict;
+    if (!strcmp(reason, "restart"))
+      return SolverObserver::BacktrackKind::Restart;
+    return SolverObserver::BacktrackKind::Other;
+  }
+
+  // Called from backtrack_without_updating_phases, the call-site every
+  // unwind goes through, before the trail is touched. 'level' is therefore
+  // still the pre-unwind level and new_level < level is guaranteed.
+  void Internal::hook_backtrack(int new_level, const char* reason) {
+    if (!opts.eventlog || !g_observer || searching_lucky_phases)
+      return;
+
+    assert(new_level < level);
+    observer().on_backtrack(level, new_level, backtrack_kind(reason), reason);
+  }
+
+  void Internal::hook_restart() {
     if (!opts.eventlog || !g_observer)
       return;
 
-    observer().on_restart(stats.restarts, level, to_level);
+    // Marker only. The unwind itself is reported by hook_backtrack with
+    // kind restart, and is absent when reuse_trail keeps the level.
+    observer().on_restart(stats.restarts);
   }
 
   void Internal::hook_delete_clause(Clause* c) {

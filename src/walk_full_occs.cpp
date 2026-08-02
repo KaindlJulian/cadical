@@ -926,7 +926,7 @@ int Internal::walk_full_occs_round (int64_t limit, bool prev) {
 void Internal::walk_full_occs () {
   START_INNER_WALK ();
 
-  backtrack ();
+  backtrack (0, "walk");
   if (propagated < trail.size () && !propagate ()) {
     LOG ("empty clause after root level propagation");
     learn_empty_clause ();

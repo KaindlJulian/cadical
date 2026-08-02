@@ -21,7 +21,7 @@ namespace CaDiCaL {
 
 int Internal::unlucky (int res) {
   if (level > 0)
-    backtrack_without_updating_phases ();
+    backtrack_without_updating_phases (0, "lucky");
   if (conflict)
     conflict = 0;
   return res;
@@ -133,7 +133,7 @@ inline bool Internal::lucky_propagate_discrepency (int dec) {
     return false;
   if (level > 1) {
     conflict = nullptr;
-    backtrack_without_updating_phases (level - 1);
+    backtrack_without_updating_phases (level - 1, "lucky");
     search_assume_decision (-dec);
     no_conflict = propagate ();
     if (no_conflict)
@@ -352,7 +352,7 @@ int Internal::lucky_decide_assumptions () {
     // analyze and learn from the conflict.
     LOG (conflict, "setting assumption lead to conflict");
     analyze_wrapper ();
-    backtrack (0);
+    backtrack (0, "lucky");
     assert (!conflict);
     int res = 0;
     while (!res) {
@@ -403,7 +403,7 @@ int Internal::negative_horn_satisfiable () {
       continue;
     if (!negative_literal) {
       if (level > 0)
-        backtrack_without_updating_phases ();
+        backtrack_without_updating_phases (0, "lucky");
       LOG (c, "no negative unassigned literal in");
       return unlucky (0);
     }

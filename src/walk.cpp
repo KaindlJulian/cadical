@@ -1048,7 +1048,7 @@ int Internal::walk_round (int64_t limit, bool prev) {
 void Internal::walk () {
   START_INNER_WALK ();
 
-  backtrack ();
+  backtrack (0, "walk");
   if (propagated < trail.size () && !propagate ()) {
     LOG ("empty clause after root level propagation");
     learn_empty_clause ();

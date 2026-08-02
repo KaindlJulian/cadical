@@ -30,9 +30,9 @@ void Internal::add_observed_var (int ilit) {
     REQUIRE (!conflict,
              "can not observe assigned variable during conflict analysis");
     const int assignment_level = var (ilit).level;
-    backtrack (assignment_level - 1);
+    backtrack (assignment_level - 1, "external");
   } else if (level && fixed (ilit)) {
-    backtrack (0);
+    backtrack (0, "external");
   }
 }
 
@@ -49,7 +49,7 @@ void Internal::remove_observed_var (int ilit) {
         !conflict,
         "can not unobserve assigned variable during conflict analysis");
     const int assignment_level = var (ilit).level;
-    backtrack (assignment_level - 1);
+    backtrack (assignment_level - 1, "external");
   }
 
   assert (fixed (ilit) || !val (ilit));
@@ -261,7 +261,7 @@ void Internal::force_backtrack (int new_level) {
        "%d (from level %d)",
        new_level, level);
 #endif
-  backtrack (new_level);
+  backtrack (new_level, "external");
 }
 
 /*----------------------------------------------------------------------------*/
@@ -823,7 +823,7 @@ void Internal::handle_external_clause (Clause *res) {
     assert (!force_no_backtrack);
     assert (level);
     // if (!opts.chrono) {
-    backtrack ();
+    backtrack (0, "external");
     // }
     return;
   }
@@ -842,13 +842,13 @@ void Internal::handle_external_clause (Clause *res) {
   if (val (pos0) < 0) { // conflicting or propagating clause
     assert (0 < l1 && l1 <= var (pos0).level);
     if (!opts.chrono) {
-      backtrack (l1);
+      backtrack (l1, "external");
     }
     if (val (pos0) < 0) {
       conflict = res;
       if (!from_propagator) {
         // its better to backtrack instead of analyze
-        backtrack (l1 - 1);
+        backtrack (l1 - 1, "external");
         conflict = 0;
         assert (!val (pos0) && !val (pos1));
       }
@@ -861,7 +861,7 @@ void Internal::handle_external_clause (Clause *res) {
   }
   if (val (pos1) < 0 && !val (pos0)) { // propagating clause
     if (!opts.chrono) {
-      backtrack (l1);
+      backtrack (l1, "external");
     }
     search_assign_driving (pos0, res);
     if (from_propagator)
@@ -1003,7 +1003,7 @@ bool Internal::external_check_solution () {
   if (!unsat && conflict) {
     const int conflict_level = var (conflict->literals[0]).level;
     if (conflict_level != level) {
-      backtrack (conflict_level);
+      backtrack (conflict_level, "external");
     }
   }
 
@@ -1052,7 +1052,7 @@ void Internal::notify_assignments () {
 
 void Internal::connect_propagator () {
   if (level)
-    backtrack ();
+    backtrack (0, "external");
 }
 
 /*----------------------------------------------------------------------------*/

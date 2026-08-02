@@ -7745,7 +7745,7 @@ bool Internal::extract_gates (bool remove_units_before_run) {
   if (!opts.congruence)
     return false;
   if (level)
-    backtrack ();
+    backtrack (0, "congruence");
   if (!propagate ()) {
     learn_empty_clause ();
     return false;

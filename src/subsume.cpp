@@ -611,7 +611,7 @@ void Internal::subsume () {
   if (unsat)
     return;
 
-  backtrack ();
+  backtrack (0, "subsume");
   if (!propagate ()) {
     learn_empty_clause ();
     return;

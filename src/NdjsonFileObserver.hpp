@@ -5,8 +5,7 @@
 #include <stdexcept>
 #include <string>
 
-// Concrete SolverObserver that serializes each event as a single NDJSON line
-// to a dedicated file.
+// SolverObserver that serializes each event as a single NDJSON line to a .jsonl file.
 
 class NdjsonFileObserver final : public SolverObserver {
   FILE* out_;
@@ -39,9 +38,10 @@ public:
   void on_init(int variables, int clauses,
     const std::vector<int>& variable_ids,
     const std::vector<ClauseInfo>& clause_list) override {
-    fprintf(out_, "{\"event\":\"init\",\"variables\":%d,\"clauses\":%d,"
+    fprintf(out_, "{\"event\":\"init\",\"protocol_version\":%d,"
+      "\"variables\":%d,\"clauses\":%d,"
       "\"variable_ids\":",
-      variables, clauses);
+      NDJSON_PROTOCOL_VERSION, variables, clauses);
     print_ints(variable_ids);
     fputs(",\"clause_list\":[", out_);
     for (size_t i = 0; i < clause_list.size(); ++i) {
@@ -89,21 +89,29 @@ public:
     fflush(out_);
   }
 
-  void on_learn_and_backtrack(const std::vector<int>& learned_literals,
-    int glue, int64_t clause_id, int jump_level,
-    int backtrack_level) override {
-    fputs("{\"event\":\"learn_and_backtrack\",\"learned_literals\":", out_);
+  void on_learn(const std::vector<int>& learned_literals, int glue,
+    int64_t clause_id, int jump_level) override {
+    fputs("{\"event\":\"learn\",\"learned_literals\":", out_);
     print_ints(learned_literals);
     fprintf(out_, ",\"glue\":%d,\"clause_id\":%" PRId64
-      ",\"jump_level\":%d,\"backtrack_level\":%d}\n",
-      glue, clause_id, jump_level, backtrack_level);
+      ",\"jump_level\":%d}\n",
+      glue, clause_id, jump_level);
     fflush(out_);
   }
 
-  void on_restart(int64_t count, int from_level, int to_level) override {
-    fprintf(out_, "{\"event\":\"restart\",\"count\":%" PRId64
-      ",\"from_level\":%d,\"to_level\":%d}\n",
-      count, from_level, to_level);
+  void on_backtrack(int from_level, int to_level, BacktrackKind kind,
+    const char* reason) override {
+    fprintf(out_, "{\"event\":\"backtrack\",\"from_level\":%d,"
+      "\"to_level\":%d,\"kind\":\"%s\"",
+      from_level, to_level, to_string(kind));
+    if (reason && *reason)  // optional detail, omitted when absent
+      fprintf(out_, ",\"reason\":\"%s\"", reason);
+    fputs("}\n", out_);
+    fflush(out_);
+  }
+
+  void on_restart(int64_t count) override {
+    fprintf(out_, "{\"event\":\"restart\",\"count\":%" PRId64 "}\n", count);
     fflush(out_);
   }
 

@@ -382,12 +382,12 @@ void Internal::assign_original_unit (int64_t id, int lit) {
 void Internal::add_new_original_clause (int64_t id) {
 
   if (!from_propagator && level && !opts.ilb) {
-    backtrack ();
+    backtrack (0, "add_clause");
   } else if (changed_val) {
     assert (val (changed_val));
     int new_level = var (changed_val).level - 1;
     assert (new_level >= 0);
-    backtrack (new_level);
+    backtrack (new_level, "add_clause");
   }
   assert (!changed_val);
   LOG (original, "original clause");
@@ -506,7 +506,7 @@ void Internal::add_new_original_clause (int64_t id) {
         const int lit = clause[0];
         assert (!val (lit) || var (lit).level);
         if (val (lit) < 0)
-          backtrack (var (lit).level - 1);
+          backtrack (var (lit).level - 1, "add_clause");
         assert (val (lit) >= 0);
         handle_external_clause (0);
         assign_original_unit (new_id, lit);
