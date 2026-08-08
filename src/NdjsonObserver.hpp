@@ -20,7 +20,7 @@ public:
   void on_init(int variables, int clauses,
     const std::vector<int>& variable_ids,
     const std::vector<ClauseInfo>& clause_list) override {
-    printf("{\"event\":\"init\",\"protocol_version\":%d,"
+    printf("{\"event\":\"init\",\"protocol_version\":\"%s\","
       "\"variables\":%d,\"clauses\":%d,"
       "\"variable_ids\":",
       NDJSON_PROTOCOL_VERSION, variables, clauses);
@@ -48,13 +48,12 @@ public:
     const std::vector<int>& reason_literals) override {
     if (reason_clause_id == -1) {
       printf("{\"event\":\"propagate\",\"literal\":%d,\"level\":0,"
-        "\"reason_clause_id\":null,\"reason_literals\":[]}\n",
+        "\"reason_clause_id\":null}\n",
         literal);
     } else {
       printf("{\"event\":\"propagate\",\"literal\":%d,\"level\":%d,"
-        "\"reason_clause_id\":%" PRId64 ",\"reason_literals\":",
+        "\"reason_clause_id\":%" PRId64 "}",
         literal, level, reason_clause_id);
-      print_ints(reason_literals);
       fputs("}\n", stdout);
     }
     fflush(stdout);

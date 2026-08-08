@@ -38,7 +38,7 @@ public:
   void on_init(int variables, int clauses,
     const std::vector<int>& variable_ids,
     const std::vector<ClauseInfo>& clause_list) override {
-    fprintf(out_, "{\"event\":\"init\",\"protocol_version\":%d,"
+    fprintf(out_, "{\"event\":\"init\",\"protocol_version\":\"%s\","
       "\"variables\":%d,\"clauses\":%d,"
       "\"variable_ids\":",
       NDJSON_PROTOCOL_VERSION, variables, clauses);
@@ -63,16 +63,15 @@ public:
   }
 
   void on_propagate(int literal, int level, int64_t reason_clause_id,
-    const std::vector<int>& reason_literals) override {
+    const std::vector<int>& _reason_literals) override {
     if (reason_clause_id == -1) {
       fprintf(out_, "{\"event\":\"propagate\",\"literal\":%d,\"level\":0,"
-        "\"reason_clause_id\":null,\"reason_literals\":[]}\n",
+        "\"reason_clause_id\":null}\n",
         literal);
     } else {
       fprintf(out_, "{\"event\":\"propagate\",\"literal\":%d,\"level\":%d,"
-        "\"reason_clause_id\":%" PRId64 ",\"reason_literals\":",
+        "\"reason_clause_id\":%" PRId64 "}\n",
         literal, level, reason_clause_id);
-      print_ints(reason_literals);
       fputs("}\n", out_);
     }
     fflush(out_);

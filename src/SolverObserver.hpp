@@ -12,7 +12,7 @@
 // Consumers implement it once per output format (e.g. NdjsonObserver writes
 // NDJSON to stdout).
 
-static const int NDJSON_PROTOCOL_VERSION = 2;
+static const char* NDJSON_PROTOCOL_VERSION = "2";
 
 class SolverObserver {
 public:
