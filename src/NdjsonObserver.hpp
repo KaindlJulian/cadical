@@ -54,7 +54,6 @@ public:
       printf("{\"event\":\"propagate\",\"literal\":%d,\"level\":%d,"
         "\"reason_clause_id\":%" PRId64 "}",
         literal, level, reason_clause_id);
-      fputs("}\n", stdout);
     }
     fflush(stdout);
   }

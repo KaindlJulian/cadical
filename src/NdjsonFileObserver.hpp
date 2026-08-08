@@ -72,7 +72,6 @@ public:
       fprintf(out_, "{\"event\":\"propagate\",\"literal\":%d,\"level\":%d,"
         "\"reason_clause_id\":%" PRId64 "}\n",
         literal, level, reason_clause_id);
-      fputs("}\n", out_);
     }
     fflush(out_);
   }
