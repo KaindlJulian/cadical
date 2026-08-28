@@ -979,6 +979,7 @@ void Internal::analyze () {
       assert (forced);
       assert (conflict_level > 0);
       LOG ("single highest level literal %d", forced);
+      hook_conflict ();
 
       // The pseudo code in the SAT'18 paper actually backtracks to the
       // 'second highest decision' level, while their code backtracks
