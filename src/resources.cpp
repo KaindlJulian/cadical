@@ -127,10 +127,14 @@ uint64_t maximum_resident_set_size () {
 // This seems to work on Linux (man page says since Linux 2.6.32).
 
 uint64_t maximum_resident_set_size () {
+#ifdef __wasi__
+  return 0; // wasi-libc's 'struct rusage' has no 'ru_maxrss'.
+#else
   struct rusage u;
   if (getrusage (RUSAGE_SELF, &u))
     return 0;
   return ((uint64_t) u.ru_maxrss) << 10;
+#endif
 }
 
 // Unfortunately 'getrusage' on Linux does not support current resident set

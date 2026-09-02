@@ -14,7 +14,7 @@ extern "C" {
 #include <unistd.h>
 }
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__wasi__)
 
 extern "C" {
 #include <sys/wait.h>
@@ -226,6 +226,13 @@ void File::delete_str_vector (std::vector<char *> &argv) {
 
 FILE *File::open_pipe (Internal *internal, const char *fmt,
                        const char *path, const char *mode) {
+#ifdef __wasi__
+  // No 'popen' under wasi.  Reporting failure here sends 'File::read' down
+  // its 'READ_FILE' fall-back, so a '.gz' argument gives the same error a
+  // corrupt plain file would.
+  (void) internal, (void) fmt, (void) path, (void) mode;
+  return 0;
+#else
 #ifdef QUIET
   (void) internal;
 #endif
@@ -250,6 +257,7 @@ FILE *File::open_pipe (Internal *internal, const char *fmt,
   FILE *res = popen (cmd, mode);
   delete[] cmd;
   return res;
+#endif
 }
 
 FILE *File::read_pipe (Internal *internal, const char *fmt, const int *sig,
@@ -266,7 +274,7 @@ FILE *File::read_pipe (Internal *internal, const char *fmt, const int *sig,
   return open_pipe (internal, fmt, path, "r");
 }
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__wasi__)
 
 #if defined(__APPLE__) || defined(__MACH__)
 static std::mutex compressed_file_writing_mutex;
@@ -401,7 +409,7 @@ File *File::read (Internal *internal, const char *path) {
 File *File::write (Internal *internal, const char *path) {
   FILE *file;
   int close_output = 3, child_pid = 0;
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__wasi__)
   if (has_suffix (path, ".xz"))
     file = write_pipe (internal, "xz -c", path, child_pid);
   else if (has_suffix (path, ".bz2"))
@@ -437,12 +445,14 @@ void File::close (bool print) {
       MSG ("closing file '%s'", name ());
     fclose (file);
   }
+#ifndef __wasi__
   if (close_file == 2) {
     if (print)
       MSG ("closing input pipe to read '%s'", name ());
     pclose (file);
   }
-#ifndef _WIN32
+#endif
+#if !defined(_WIN32) && !defined(__wasi__)
   if (close_file == 3) {
     if (print)
       MSG ("closing output pipe to write '%s'", name ());

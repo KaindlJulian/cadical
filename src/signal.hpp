@@ -10,7 +10,7 @@ public:
   Handler () {}
   virtual ~Handler () {}
   virtual void catch_signal (int sig) = 0;
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__wasi__)
   virtual void catch_alarm ();
 #endif
 };
@@ -20,7 +20,7 @@ class Signal {
 public:
   static void set (Handler *);
   static void reset ();
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__wasi__)
   static void alarm (int seconds);
   static void reset_alarm ();
 #endif

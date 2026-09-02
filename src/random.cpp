@@ -78,7 +78,7 @@ static uint64_t hash_machine_identifier () {
 // work.  As an additional measure to increase the possibility to get
 // different seeds we are now also using network addresses (explicitly).
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__wasi__)
 
 extern "C" {
 #include <ifaddrs.h>
@@ -102,7 +102,7 @@ static uint64_t hash_network_addresses () {
   // you really need to run 'mobical' on a Windows cluster where each node
   // has identical IP addresses.
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__wasi__)
   struct ifaddrs *addrs;
   if (!getifaddrs (&addrs)) {
     for (struct ifaddrs *addr = addrs; addr; addr = addr->ifa_next) {

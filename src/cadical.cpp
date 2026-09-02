@@ -25,7 +25,7 @@ class App : public Handler, public Terminator {
 
   Solver *solver; // Global solver.
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__wasi__)
   // Command line options.
   //
   int time_limit; // '-t <sec>'
@@ -116,7 +116,7 @@ void App::print_usage (bool all) {
 "  -q             be quiet\n"
 #endif
 "\n"
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__wasi__)
 "  -t <sec>       set wall clock time limit\n"
 #endif
 
@@ -133,7 +133,7 @@ void App::print_usage (bool all) {
 "  -v             increase verbosity (see also '--verbose' below)\n"
 "  -q             be quiet (same as '--quiet')\n"
 #endif
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__wasi__)
 "  -t <sec>       set wall clock time limit\n"
 #endif
 "\n"
@@ -237,7 +237,7 @@ void App::print_usage (bool all) {
 "stops at the first satisfied cube if there is one and uses that\n"
 "one for the witness to print.  Conflict and decision limits are\n"
 "applied to each individual cube solving call while '-P', '-L'"
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__wasi__)
 "\n"
 #else
 " and\n"
@@ -512,7 +512,7 @@ int App::main (int argc, char **argv) {
       else
         decision_limit_specified = argv[i];
     }
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__wasi__)
     else if (!strcmp (argv[i], "-t")) {
       if (++i == argc)
         APPERR ("argument to '-t' missing");
@@ -615,15 +615,18 @@ int App::main (int argc, char **argv) {
   //
   // TODO: add proper forking, waiting, signal catching & propagating ...
   //
-  FILE *less_pipe;
+  FILE *less_pipe = 0;
+#ifndef __wasi__
   if (less) {
     assert (isatty (1));
     less_pipe = popen ("less -r", "w");
     if (!less_pipe)
       APPERR ("could not execute and open pipe to 'less -r' command");
     dup2 (fileno (less_pipe), 1);
-  } else
-    less_pipe = 0;
+  }
+#else
+  (void) less;
+#endif
 
   /*----------------------------------------------------------------------*/
 
@@ -645,7 +648,7 @@ int App::main (int argc, char **argv) {
   }
 #endif
   if (preprocessing > 0 || localsearch > 0 ||
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__wasi__)
       time_limit >= 0 ||
 #endif
       conflict_limit >= 0 || decision_limit >= 0) {
@@ -662,7 +665,7 @@ int App::main (int argc, char **argv) {
           localsearch, localsearch_specified);
       solver->limit ("localsearch", localsearch);
     }
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__wasi__)
     if (time_limit >= 0) {
       solver->message (
           "setting time limit to %d seconds real time (due to '-t %s')",
@@ -939,11 +942,13 @@ int App::main (int argc, char **argv) {
            "c https://mysolvertimesout.org/#sat in order to improve\n"
            "c automated reasoning. 🚧 🚧 🚧\n",
            write_result_file);
+#ifndef __wasi__
   if (less_pipe) {
     close (1);
     pclose (less_pipe);
   }
-#ifndef _WIN32
+#endif
+#if !defined(_WIN32) && !defined(__wasi__)
   if (time_limit > 0)
     alarm (0);
 #endif
@@ -959,7 +964,7 @@ void App::init () {
 
   assert (!solver);
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__wasi__)
   time_limit = -1;
 #endif
   force_strict_parsing = 1;
