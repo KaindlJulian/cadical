@@ -2,13 +2,15 @@
 
 #include <cinttypes>
 #include <cstdio>
-#include <stdexcept>
 #include <string>
 
 // SolverObserver that serializes each event as a single NDJSON line to a .jsonl file.
 
 class NdjsonFileObserver final : public SolverObserver {
   FILE* out_;
+
+  // Block buffer for the event stream. target will be a virtual file in wasm
+  static const size_t BUFFER_BYTES = 256 * 1024;
 
   void print_ints(const std::vector<int>& v) {
     fputc('[', out_);
@@ -21,11 +23,15 @@ class NdjsonFileObserver final : public SolverObserver {
   }
 
 public:
+  // Does not throw: the caller checks 'ok()' and reports the failure itself,
+  // which keeps the solver buildable with '-fno-exceptions'.
   explicit NdjsonFileObserver(const std::string& path) {
     out_ = fopen(path.c_str(), "w");
-    if (!out_)
-      throw std::runtime_error("NdjsonFileObserver: cannot open " + path);
+    if (out_)
+      setvbuf(out_, nullptr, _IOFBF, BUFFER_BYTES);
   }
+
+  bool ok() const { return out_ != nullptr; }
 
   ~NdjsonFileObserver() {
     if (out_)
@@ -52,14 +58,12 @@ public:
       fputc('}', out_);
     }
     fputs("]}\n", out_);
-    fflush(out_);
   }
 
   void on_decide(int literal, int level, const char* heuristic) override {
     fprintf(out_, "{\"event\":\"decide\",\"literal\":%d,\"level\":%d,"
       "\"heuristic\":\"%s\"}\n",
       literal, level, heuristic);
-    fflush(out_);
   }
 
   void on_propagate(int literal, int level, int64_t reason_clause_id,
@@ -73,7 +77,6 @@ public:
         "\"reason_clause_id\":%" PRId64 "}\n",
         literal, level, reason_clause_id);
     }
-    fflush(out_);
   }
 
   void on_conflict(int64_t clause_id, const std::vector<int>& literals,
@@ -84,7 +87,6 @@ public:
     fprintf(out_, ",\"level\":%d,\"trail\":", level);
     print_ints(trail);
     fputs("}\n", out_);
-    fflush(out_);
   }
 
   void on_learn(const std::vector<int>& learned_literals, int glue,
@@ -94,7 +96,6 @@ public:
     fprintf(out_, ",\"glue\":%d,\"clause_id\":%" PRId64
       ",\"jump_level\":%d}\n",
       glue, clause_id, jump_level);
-    fflush(out_);
   }
 
   void on_backtrack(int from_level, int to_level, BacktrackKind kind,
@@ -105,12 +106,10 @@ public:
     if (reason && *reason)  // optional detail, omitted when absent
       fprintf(out_, ",\"reason\":\"%s\"", reason);
     fputs("}\n", out_);
-    fflush(out_);
   }
 
   void on_restart(int64_t count) override {
     fprintf(out_, "{\"event\":\"restart\",\"count\":%" PRId64 "}\n", count);
-    fflush(out_);
   }
 
   void on_delete_clause(int64_t clause_id,
@@ -120,7 +119,6 @@ public:
       clause_id);
     print_ints(literals);
     fputs("}\n", out_);
-    fflush(out_);
   }
 
   void on_result(const char* result,
@@ -128,6 +126,5 @@ public:
     fprintf(out_, "{\"event\":\"result\",\"result\":\"%s\",\"model\":", result);
     print_ints(model);
     fputs("}\n", out_);
-    fflush(out_);
   }
 };

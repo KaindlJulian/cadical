@@ -31,9 +31,12 @@ namespace CaDiCaL {
     if (g_observer)  // already initialized (guards re-entry / incremental solve)
       return;
 
-    if (eventlog_path)
-      g_observer = std::make_unique<NdjsonFileObserver>(eventlog_path);
-    else
+    if (eventlog_path) {
+      auto file_observer = std::make_unique<NdjsonFileObserver>(eventlog_path);
+      if (!file_observer->ok ())
+        fatal ("can not write eventlog file '%s'", eventlog_path);
+      g_observer = std::move (file_observer);
+    } else
       g_observer = std::make_unique<NdjsonObserver>();
 
     std::vector<int> variable_ids;
