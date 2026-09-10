@@ -1207,7 +1207,9 @@ bool Solver::trace_eventlog (const char *path) {
   REQUIRE (state () == CONFIGURING,
            "can only set eventlog path '%s' right after initialization", path);
   internal->eventlog_path = path;
-  internal->opts.eventlog = 1;
+  if (!internal->opts.eventlog) {
+    internal->opts.eventlog = 1; // '--eventlog=2' is parsed before this runs
+  }
   LOG_API_CALL_RETURNS ("trace_eventlog", path, true);
   return true;
 }

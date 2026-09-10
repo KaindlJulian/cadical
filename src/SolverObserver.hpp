@@ -6,13 +6,11 @@
 
 // Abstract observer interface for solver events.
 //
-// Adapters implement this class (mapping solver-internal
-// structures to the plain c++ types below).
-//
-// Consumers implement it once per output format (e.g. NdjsonObserver writes
-// NDJSON to stdout).
+// Adapters implement this class (mapping solver-internal structures to the plain c++ types below).
 
-static const char* NDJSON_PROTOCOL_VERSION = "2";
+// Consumers implement it once per output format (e.g. NdjsonObserver writes NDJSON to stdout).
+
+#define NDJSON_PROTOCOL_VERSION "3"
 
 class SolverObserver {
 public:
@@ -27,6 +25,23 @@ public:
     Other     // inprocessing, preprocessing, incremental API, cleanup
   };
 
+
+  enum class InspectOutcome {
+    Satisfied,  // the clause is true
+    Unit,       // one non-false literal left, the clause propagates
+    Falsified,  // every literal is false
+    Unresolved  // at least two literals are still non-false
+  };
+
+  static const char *to_string(InspectOutcome outcome) {
+    switch (outcome) {
+      case InspectOutcome::Satisfied: return "satisfied";
+      case InspectOutcome::Unit: return "unit";
+      case InspectOutcome::Falsified: return "falsified";
+      default: return "unresolved";
+    }
+  }
+
   static const char *to_string(BacktrackKind kind) {
     switch (kind) {
     case BacktrackKind::Conflict: return "conflict";
@@ -38,9 +53,8 @@ public:
   virtual ~SolverObserver() = default;
 
   // Fired once before solving begins.
-  // Captures the complete initial formula the solver will operate on.
-  // Root-level literals forced during parsing are reported afterwards as
-  // ordinary on_propagate events.
+  // Captures the complete initial formula.
+  // Root-level literals forced during parsing are reported afterwards as on_propagate events.
   virtual void on_init(int variables, int clauses,
     const std::vector<int>& variable_ids,
     const std::vector<ClauseInfo>& clause_list) = 0;
@@ -64,9 +78,7 @@ public:
   virtual void on_learn(const std::vector<int>& learned_literals, int glue,
     int64_t clause_id, int jump_level) = 0;
 
-  // Fired before every trail unwind, from any site in the solver, and only
-  // when something is actually unwound (to_level < from_level).
-  //
+  // Fired before every trail unwind, from any site in the solver
   // reason is optional free-form detail naming the phase that requested the unwind.
   virtual void on_backtrack(int from_level, int to_level, BacktrackKind kind,
     const char* reason) = 0;
@@ -75,6 +87,13 @@ public:
   // as an on_backtrack with kind Restart (which may be absent when trail
   // reuse leaves the level unchanged).
   virtual void on_restart(int64_t count) = 0;
+
+  // Fired for each clause propagation inspects, when BCP-level logging is on.
+  // w0/w1 are the watched literals, one of them is the
+  // n0/n1 are the next watched literals, when the inspection replaced a watch. 
+  // n0 == 0 means it replaced none
+  virtual void on_inspect(int64_t clause_id, InspectOutcome outcome,
+    int w0, int w1, int n0, int n1) = 0;
 
   // Fired before a clause is freed during garbage collection.
   virtual void on_delete_clause(int64_t clause_id,

@@ -9,17 +9,16 @@ class NdjsonObserver final : public SolverObserver {
   static void print_ints(const std::vector<int>& v) {
     fputc('[', stdout);
     for (size_t i = 0; i < v.size(); ++i) {
-      if (i)
+      if (i) {
         fputc(',', stdout);
+      }
       printf("%d", v[i]);
     }
     fputc(']', stdout);
   }
 
 public:
-  void on_init(int variables, int clauses,
-    const std::vector<int>& variable_ids,
-    const std::vector<ClauseInfo>& clause_list) override {
+  void on_init(int variables, int clauses, const std::vector<int>& variable_ids, const std::vector<ClauseInfo>& clause_list) override {
     printf("{\"event\":\"init\",\"protocol_version\":\"%s\","
       "\"variables\":%d,\"clauses\":%d,"
       "\"variable_ids\":",
@@ -27,8 +26,9 @@ public:
     print_ints(variable_ids);
     fputs(",\"clause_list\":[", stdout);
     for (size_t i = 0; i < clause_list.size(); ++i) {
-      if (i)
+      if (i) {
         fputc(',', stdout);
+      }
       printf("{\"id\":%" PRId64 ",\"literals\":", clause_list[i].id);
       print_ints(clause_list[i].literals);
       fputc('}', stdout);
@@ -44,8 +44,7 @@ public:
     fflush(stdout);
   }
 
-  void on_propagate(int literal, int level, int64_t reason_clause_id,
-    const std::vector<int>& reason_literals) override {
+  void on_propagate(int literal, int level, int64_t reason_clause_id, const std::vector<int>& reason_literals) override {
     if (reason_clause_id == -1) {
       printf("{\"event\":\"propagate\",\"literal\":%d,\"level\":0,"
         "\"reason_clause_id\":null}\n",
@@ -58,8 +57,7 @@ public:
     fflush(stdout);
   }
 
-  void on_conflict(int64_t clause_id, const std::vector<int>& literals,
-    int level, const std::vector<int>& trail) override {
+  void on_conflict(int64_t clause_id, const std::vector<int>& literals, int level, const std::vector<int>& trail) override {
     printf("{\"event\":\"conflict\",\"clause_id\":%" PRId64 ",\"literals\":",
       clause_id);
     print_ints(literals);
@@ -69,8 +67,7 @@ public:
     fflush(stdout);
   }
 
-  void on_learn(const std::vector<int>& learned_literals, int glue,
-    int64_t clause_id, int jump_level) override {
+  void on_learn(const std::vector<int>& learned_literals, int glue, int64_t clause_id, int jump_level) override {
     printf("{\"event\":\"learn\",\"learned_literals\":");
     print_ints(learned_literals);
     printf(",\"glue\":%d,\"clause_id\":%" PRId64 ",\"jump_level\":%d}\n",
@@ -78,13 +75,13 @@ public:
     fflush(stdout);
   }
 
-  void on_backtrack(int from_level, int to_level, BacktrackKind kind,
-    const char* reason) override {
+  void on_backtrack(int from_level, int to_level, BacktrackKind kind, const char* reason) override {
     printf("{\"event\":\"backtrack\",\"from_level\":%d,\"to_level\":%d,"
       "\"kind\":\"%s\"",
       from_level, to_level, to_string(kind));
-    if (reason && *reason)  // optional detail, omitted when absent
+    if (reason && *reason) {  // optional detail, omitted when absent
       printf(",\"reason\":\"%s\"", reason);
+    }
     printf("}\n");
     fflush(stdout);
   }
@@ -94,8 +91,7 @@ public:
     fflush(stdout);
   }
 
-  void on_delete_clause(int64_t clause_id,
-    const std::vector<int>& literals) override {
+  void on_delete_clause(int64_t clause_id, const std::vector<int>& literals) override {
     printf("{\"event\":\"delete_clause\",\"clause_id\":%" PRId64
       ",\"literals\":",
       clause_id);
@@ -104,8 +100,22 @@ public:
     fflush(stdout);
   }
 
-  void on_result(const char* result,
-    const std::vector<int>& model) override {
+  void on_inspect(int64_t clause_id, InspectOutcome outcome, int w0, int w1, int n0, int n1) override {
+    printf("{\"event\":\"inspect\",\"clause_id\":%" PRId64
+      ",\"outcome\":\"%s\"",
+      clause_id, to_string(outcome));
+    printf(",\"watched\":[%d,%d]", w0, w1);
+
+    if (n0) {
+      // only when this inspection replaced a watch
+      printf(",\"next_watched\":[%d,%d]", n0, n1);
+    }
+
+    fputs("}\n", stdout);
+    fflush(stdout);
+  }
+
+  void on_result(const char* result, const std::vector<int>& model) override {
     printf("{\"event\":\"result\",\"result\":\"%s\",\"model\":", result);
     print_ints(model);
     fputs("}\n", stdout);

@@ -26,18 +26,22 @@ namespace CaDiCaL {
   static std::vector<PendingPropagate> g_pending;
 
   void Internal::hook_init() {
-    if (!opts.eventlog)
+    if (!opts.eventlog) {
       return;
-    if (g_observer)  // already initialized (guards re-entry / incremental solve)
+    }
+    if (g_observer) {  // already initialized (guards re-entry / incremental solve)
       return;
+    }
 
     if (eventlog_path) {
       auto file_observer = std::make_unique<NdjsonFileObserver>(eventlog_path);
-      if (!file_observer->ok ())
+      if (!file_observer->ok ()) {
         fatal ("can not write eventlog file '%s'", eventlog_path);
+      }
       g_observer = std::move (file_observer);
-    } else
+    } else {
       g_observer = std::make_unique<NdjsonObserver>();
+    }
 
     std::vector<int> variable_ids;
     variable_ids.reserve(max_var);
@@ -65,8 +69,9 @@ namespace CaDiCaL {
   }
 
   void Internal::hook_decide(int lit, bool random_dec) {
-    if (!opts.eventlog || !g_observer)
+    if (!opts.eventlog || !g_observer) {
       return;
+    }
 
     const char* heuristic =
       random_dec ? "random" : (use_scores() ? "vsids" : "vmtf");
@@ -74,8 +79,9 @@ namespace CaDiCaL {
   }
 
   void Internal::hook_propagate(int lit, int lit_level, Clause* reason) {
-    if (!opts.eventlog || searching_lucky_phases)
+    if (!opts.eventlog || searching_lucky_phases) {
       return;
+    }
 
     int level;
     int64_t reason_id;
@@ -100,8 +106,9 @@ namespace CaDiCaL {
   }
 
   void Internal::hook_conflict() {
-    if (!opts.eventlog || !g_observer || searching_lucky_phases)
+    if (!opts.eventlog || !g_observer || searching_lucky_phases) {
       return;
+    }
 
     assert(conflict);
     std::vector<int> lits(conflict->begin(), conflict->end());
@@ -109,8 +116,9 @@ namespace CaDiCaL {
   }
 
   void Internal::hook_learn(int glue, int jump, Clause* driving) {
-    if (!opts.eventlog || !g_observer || searching_lucky_phases)
+    if (!opts.eventlog || !g_observer || searching_lucky_phases) {
       return;
+    }
 
     int64_t cid = driving ? driving->id : -1;
     observer().on_learn(clause, glue, cid, jump);
@@ -124,13 +132,16 @@ namespace CaDiCaL {
   // resolving the conflict without deriving a clause ("otfs"). Apart form retarts 
   // everything else is other.
   static SolverObserver::BacktrackKind backtrack_kind(const char* reason) {
-    if (!reason)
+    if (!reason) {
       return SolverObserver::BacktrackKind::Other;
+    }
     if (!strcmp(reason, "analyze") || !strcmp(reason, "chrono") ||
-        !strcmp(reason, "otfs"))
+        !strcmp(reason, "otfs")) {
       return SolverObserver::BacktrackKind::Conflict;
-    if (!strcmp(reason, "restart"))
+    }
+    if (!strcmp(reason, "restart")) {
       return SolverObserver::BacktrackKind::Restart;
+    }
     return SolverObserver::BacktrackKind::Other;
   }
 
@@ -138,16 +149,18 @@ namespace CaDiCaL {
   // unwind goes through, before the trail is touched. 'level' is therefore
   // still the pre-unwind level and new_level < level is guaranteed.
   void Internal::hook_backtrack(int new_level, const char* reason) {
-    if (!opts.eventlog || !g_observer || searching_lucky_phases)
+    if (!opts.eventlog || !g_observer || searching_lucky_phases) {
       return;
+    }
 
     assert(new_level < level);
     observer().on_backtrack(level, new_level, backtrack_kind(reason), reason);
   }
 
   void Internal::hook_restart() {
-    if (!opts.eventlog || !g_observer)
+    if (!opts.eventlog || !g_observer) {
       return;
+    }
 
     // Marker only. The unwind itself is reported by hook_backtrack with
     // kind restart, and is absent when reuse_trail keeps the level.
@@ -155,16 +168,27 @@ namespace CaDiCaL {
   }
 
   void Internal::hook_delete_clause(Clause* c) {
-    if (!opts.eventlog || !g_observer)
+    if (!opts.eventlog || !g_observer) {
       return;
+    }
 
     std::vector<int> lits(c->begin(), c->end());
     observer().on_delete_clause(c->id, lits);
   }
 
-  void Internal::hook_result(int res) {
-    if (!opts.eventlog || !g_observer)
+
+  void Internal::hook_inspect(Clause* c, SolverObserver::InspectOutcome outcome, int n0, int n1) {
+    if (opts.eventlog < 2 || !g_observer || searching_lucky_phases) {
       return;
+    }
+    // watched literals are kept at index 0 and 1
+    observer().on_inspect(c->id, outcome, c->literals[0], c->literals[1], n0, n1);
+  }
+
+  void Internal::hook_result(int res) {
+    if (!opts.eventlog || !g_observer) {
+      return;
+    }
 
     const char* result_str =
       (res == 10) ? "sat" : (res == 20) ? "unsat" : "unknown";
@@ -173,8 +197,9 @@ namespace CaDiCaL {
     if (res == 10) {
       for (int idx = 1; idx <= max_var; idx++) {
         const signed char v = val(idx);
-        if (v)
+        if (v) {
           model.push_back(v > 0 ? idx : -idx);
+        }
       }
     }
 

@@ -93,6 +93,7 @@ extern "C" {
 #include "reluctant.hpp"
 #include "resources.hpp"
 #include "score.hpp"
+#include "SolverObserver.hpp"
 #include "stats.hpp"
 #include "sweep.hpp"
 #include "terminal.hpp"
@@ -1804,6 +1805,7 @@ struct Internal {
   void hook_backtrack (int new_level, const char *reason);
   void hook_restart ();
   void hook_delete_clause (Clause *c);
+  void hook_inspect (Clause *c, SolverObserver::InspectOutcome outcome, int n0 = 0, int n1 = 0);
   void hook_result (int res);
 
   // Print error messages which are really always printed (even if 'quiet'

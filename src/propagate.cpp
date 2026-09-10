@@ -259,8 +259,10 @@ bool Internal::propagate () {
       const signed char b = val (w.blit);
       LOG (w.clause, "checking");
 
-      if (b > 0)
+      if (b > 0) {
+        hook_inspect (w.clause, SolverObserver::InspectOutcome::Satisfied);
         continue; // blocking literal satisfied
+      }
 
       if (w.binary ()) {
 
@@ -291,9 +293,11 @@ bool Internal::propagate () {
         // to access the clause at all (only during conflict analysis, and
         // there also only to simplify the code).
 
-        if (b < 0)
+        if (b < 0) {
+          hook_inspect (w.clause, SolverObserver::InspectOutcome::Falsified);
           conflict = w.clause; // but continue ...
-        else {
+        } else {
+          hook_inspect (w.clause, SolverObserver::InspectOutcome::Unit);
           build_chain_for_units (w.blit, w.clause, 0);
           search_assign (w.blit, w.clause);
           // lrat_chain.clear (); done in search_assign
@@ -333,9 +337,10 @@ bool Internal::propagate () {
         const int other = lits[0] ^ lits[1] ^ lit;
         const signed char u = val (other); // value of the other watch
 
-        if (u > 0)
+        if (u > 0) {
+          hook_inspect (w.clause, SolverObserver::InspectOutcome::Satisfied);
           j[-1].blit = other; // satisfied, just replace blit
-        else {
+        } else {
 
           // This follows Ian Gent's (JAIR'13) idea of saving the position
           // of the last watch replacement.  In essence it needs two copies
@@ -375,6 +380,7 @@ bool Internal::propagate () {
 
             // Replacement satisfied, so just replace 'blit'.
 
+            hook_inspect (w.clause, SolverObserver::InspectOutcome::Satisfied);
             j[-1].blit = r;
 
           } else if (!v) {
@@ -382,6 +388,12 @@ bool Internal::propagate () {
             // Found new unassigned replacement literal to be watched.
 
             LOG (w.clause, "unwatch %d in", lit);
+
+            // Before the swap, so the reported pair is the one that put this
+            // clause on the watch list of 'lit'. The pair it leaves with is
+            // what the two lines below install.
+            hook_inspect (w.clause, SolverObserver::InspectOutcome::Unresolved,
+                          other, r);
 
             lits[0] = other;
             lits[1] = r;
@@ -400,6 +412,7 @@ bool Internal::propagate () {
             // The other watch is unassigned ('!u') and all other literals
             // assigned to false (still 'v < 0'), thus we found a unit.
             //
+            hook_inspect (w.clause, SolverObserver::InspectOutcome::Unit);
             build_chain_for_units (other, w.clause, 0);
             search_assign (other, w.clause);
             // lrat_chain.clear (); done in search_assign
@@ -449,6 +462,7 @@ bool Internal::propagate () {
             // The other watch is assigned false ('u < 0') and all other
             // literals as well (still 'v < 0'), thus we found a conflict.
 
+            hook_inspect (w.clause, SolverObserver::InspectOutcome::Falsified);
             conflict = w.clause;
             break;
           }
