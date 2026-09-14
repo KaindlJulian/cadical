@@ -51,7 +51,7 @@ public:
         literal);
     } else {
       printf("{\"event\":\"propagate\",\"literal\":%d,\"level\":%d,"
-        "\"reason_clause_id\":%" PRId64 "}",
+        "\"reason_clause_id\":%" PRId64 "}\n",
         literal, level, reason_clause_id);
     }
     fflush(stdout);
