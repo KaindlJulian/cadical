@@ -10,7 +10,7 @@
 
 // Consumers implement it once per output format (e.g. NdjsonObserver writes NDJSON to stdout).
 
-#define NDJSON_PROTOCOL_VERSION "3"
+#define NDJSON_PROTOCOL_VERSION "1"
 
 class SolverObserver {
 public:
