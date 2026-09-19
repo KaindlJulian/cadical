@@ -68,8 +68,13 @@ namespace CaDiCaL {
     g_pending.clear();
   }
 
+  // true whenever the solver is off the CDCL path (e.g. random walks)
+  static bool off_search_path(bool private_steps, int mode) {
+    return private_steps || !(mode & Internal::SEARCH) || (mode & Internal::WALK);
+  }
+
   void Internal::hook_decide(int lit, bool random_dec) {
-    if (!opts.eventlog || !g_observer) {
+    if (!opts.eventlog || !g_observer || off_search_path(private_steps, mode)) {
       return;
     }
 
@@ -80,6 +85,9 @@ namespace CaDiCaL {
 
   void Internal::hook_propagate(int lit, int lit_level, Clause* reason) {
     if (!opts.eventlog || searching_lucky_phases) {
+      return;
+    }
+    if (lit_level > 0 && off_search_path(private_steps, mode)) {
       return;
     }
 
@@ -149,7 +157,7 @@ namespace CaDiCaL {
   // unwind goes through, before the trail is touched. 'level' is therefore
   // still the pre-unwind level and new_level < level is guaranteed.
   void Internal::hook_backtrack(int new_level, const char* reason) {
-    if (!opts.eventlog || !g_observer || searching_lucky_phases) {
+    if (!opts.eventlog || !g_observer || searching_lucky_phases || off_search_path(private_steps, mode)) {
       return;
     }
 
@@ -178,7 +186,7 @@ namespace CaDiCaL {
 
 
   void Internal::hook_inspect(Clause* c, SolverObserver::InspectOutcome outcome, int n0, int n1) {
-    if (opts.eventlog < 2 || !g_observer || searching_lucky_phases) {
+    if (opts.eventlog < 2 || !g_observer || searching_lucky_phases || off_search_path(private_steps, mode)) {
       return;
     }
     // watched literals are kept at index 0 and 1
