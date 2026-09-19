@@ -1,4 +1,5 @@
 #include "internal.hpp"
+#include "external.hpp"
 
 #include "NdjsonObserver.hpp"
 #include "NdjsonFileObserver.hpp"
@@ -203,11 +204,13 @@ namespace CaDiCaL {
 
     std::vector<int> model;
     if (res == 10) {
-      for (int idx = 1; idx <= max_var; idx++) {
-        const signed char v = val(idx);
-        if (v) {
-          model.push_back(v > 0 ? idx : -idx);
+      if (!external->extended)
+        external->extend ();
+      for (int eidx = 1; eidx <= external->max_var; eidx++) {
+        if (external->ervars[eidx]) {
+          continue;  // solver-added, not part of the input formula
         }
+        model.push_back(external->ival(eidx));
       }
     }
 
